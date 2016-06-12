@@ -9,30 +9,33 @@ package {
 		
 		public function carnivore():void {
 			super(thing);
-			
+			foodPreference = master.animalsArr;
 			//addChild(thing);
 			
 			thing.gotoAndStop("idle");
 			//addEventListener(Event.ENTER_FRAME, biologicalClock);
 		}
 		
-		override public function lookForFood(dis:int):Boolean {
-			var foundFood:Boolean = false;
-			var ob:int = calc.ObstructedAddHere(x, y, this.master.animalsArr, dis, this);
-			if (ob>0) {
-				tx = this.master.animalsArr[ob].x;
-				ty = this.master.animalsArr[ob].y;
-			
-				//rotation = angle;
-				// face food
-				faceTar();
-				//
-			
-				isBusy = true;
-				physicalState = "moving";
-				foundFood = true;				
+
+		
+		override public function reproduction():void {
+			if (reproductionLevel > reproductionLevelMax) {
+				reproductionLevel = 0;
+				master.addCarnivore(this.x + 30, this.y);
 			}
-			return foundFood;
+		}
+		
+		override public function eat():void {
+			var ob:int = Omni.FindFirstObject(x, y, master.animalsArr, 20, this);
+			if (ob>0) {
+				master.physicalObjects[ob].life--;
+				life += 1;
+				size += 1;
+				reproductionLevel++;
+				//faceTar();
+			}else {
+				finishedTask();
+			}
 		}
 		
 	}

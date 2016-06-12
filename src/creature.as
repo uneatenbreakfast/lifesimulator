@@ -1,4 +1,5 @@
 ﻿package {
+	import flash.display.DisplayObject;
 	import flash.display.Graphics;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
@@ -7,30 +8,42 @@
 	import flash.geom.Point;
 	
 	
-	public class creature extends MovieClip {
+	public class creature extends PrimordialOrganism {
+		/* To Dos
+		 - Memory bank of last known location with food
+		 - herbivores eating carnivores
+		 
+		 
+		 [ Can randomise: life, hungerLimit, speed, signtDis ]
+		*/
+		
 		private var thing:*;
 		public var master:Main;
 		
-		public var mindState:String = "adventurous";// adventurous moving idle hungry
-		public var physicalState:String = "idle"; // moving
-		public var isBusy:Boolean = false; // no doing anything, can make decisions
+		public var mindState:String = "adventurous";// adventurous, moving, idle, hungry
+		public var physicalState:String = "idle"; // moving,
+		public var isBusy:Boolean = false; // not doing anything, can make decisions
+		
+		//Herbi/Carni
+		public var foodPreference:Array = [];
 		
 		// stats
 		public var size:int = 1;
+		public var touchRadius:int = 10; // Radius of hitArea
 		public var speed:int = 1;
-		public var sightDis:int = 100;
+		public var sightDis:int = 200;
 		public var lazyness:int = 5;
-		public var hungerlevel:int = 0;
-		public var life:Number = 100;
+		
+		private var hungerLimit:int = 100; 
 		
 		public var reproductionLevel:int = 0; // Once reaches 100 - Makes offspring
 		public var reproductionLevelMax:int = 300;
 		public var idleTime:int;
-		public var starveLevel:int = 100;
 		
 		// movement
 		public var tx:int;
 		public var ty:int;
+		private var stuckLimit:int = 50;
 		
 		// icons
 		public var i_hunger:icon_hungry = new icon_hungry();
@@ -48,16 +61,14 @@
 		}
 		
 		private function animateCircle( pc:Number, rad:int, color:uint, thickness:Number):void {
-			//master.graphics.clear();
-			this.graphics.lineStyle(1, 0);
-			this.graphics.drawCircle(0, 0, sightDis);
+
 			
 			this.graphics.lineStyle(thickness, color);
-			drawArc(0, 0, 0, (pc * Math.PI * 2 ), rad, 1);
+			Omni.drawArc(this, 0, 0, 0, (pc * Math.PI * 2 ), rad, 1);
 		}
 		
 		private function updateIcons():void {
-			if (hungerlevel < starveLevel) {
+			if (life < hungerLimit) {
 				if (!contains(i_hunger) ) {
 					addChild(i_hunger);
 				}
@@ -100,6 +111,13 @@
 				return num;
 			}
 		}
+		private function checkStuckStatus():void {
+			if (stuckLimit < 0) {
+				stuckLimit = 50;
+				finishedTask();// character can't reach target location, so do something else
+			}
+			stuckLimit--;
+		}
 		public function biologicalClock(e:Event):void {
 			
 			
@@ -107,7 +125,7 @@
 			updateIcons(); 
 			
 			
-			// Draw Health Circles
+			//  Health Circles
 			this.graphics.clear();
 
 			var numHeathTanks:int = Math.ceil(life / 100);
@@ -126,31 +144,33 @@
 			animateCircle((reproductionLevel / reproductionLevelMax), 20, 0xfe99ff, 2.0 ); // Pink
 			
 			//------ Check Special Life Events
-			if (reproductionLevel > reproductionLevelMax) {
-				reproductionLevel = 0;
-				master.addCreature(this.x + 30, this.y);
-			}
+			reproduction();
+			
 			
 			
 			//------ Growth			
-			growth();
-			hunger();
+			growth(); // change scaleXY
+			hunger(); // minus life slowly
 			
 			//------ Personality
 			
 			if (!isBusy) {
-				if (mindState == "adventurous" ) {
-					setRandomMovementTarget();
-				}else if (mindState == "idle") {
-					thing.gotoAndStop("idle");
-					idleTime--;
-					
-					if (idleTime < 0) {
-						physicalState = "idle";
-						reRollMindState();
-					}
-				}else if (mindState == "hungry") {
-					scanForFood();
+				switch(mindState) {
+					case "adventurous":
+						setRandomMovementTarget();
+						break;
+					case "idle":
+						thing.gotoAndStop("idle");
+						idleTime--;
+						
+						if (idleTime < 0) {
+							physicalState = "idle";
+							reRollMindState();
+						}
+						break;
+					case "hungry":
+						scanForFood();
+						break;
 				}
 			}else {
 				// is busy doing something
@@ -159,7 +179,7 @@
 						thing.gotoAndStop("move");
 						
 						if (mindState == "hungry") {
-							lookForFood(sightDis);
+							lookForFood();
 						}
 											
 						var dx:Number = tx - x;
@@ -169,15 +189,16 @@
 						var toMovex:Number = speed * dx / distance;
 						var toMovey:Number = speed * dy / distance;
 						
-						if (calc.canAddHere(x + toMovex, y + toMovey, master.physicalObjects,20, this)) {
+						if (Omni.spaceIsFree(x + toMovex, y + toMovey, master.physicalObjects,touchRadius, this)) {
 							x += toMovex;
 							y += toMovey;
 						}else {
 							dx = dy = 0;
+							checkStuckStatus();
 						}
 
-						if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-							if (lookForFood(25)) {// found food
+						if (distance < touchRadius + 5) {
+							if (lookForFood()) {// found food
 								physicalState = "eating";
 								thing.gotoAndStop("eat");
 								isBusy = true;
@@ -190,47 +211,36 @@
 						}
 						break;
 					case "eating":
-						
 						// check if touching food/enemy
-						var ob:int = calc.ObstructedAddHere(x, y, master.physicalObjects, 25, this);
-						if (ob>0) {
-							master.physicalObjects[ob].life--;
-							hungerlevel++;
-							
-							life += 1;
-							size += 1;
-							reproductionLevel++;
-							//faceTar();
-						}else {
-							finishedTask();
-						}
+						eat();
 						break;
 				}
-				
 			}
-			
-			
 		}
-		private function finishedTask():void {
+		public function finishedTask():void {
 			physicalState = "idle";
 			isBusy = false;
 			reRollMindState();
+			
+			trace("ff");
 		}
 		private function scanForFood():void {
-			if (!lookForFood(sightDis)) {
+			if (!lookForFood()) {
 				setRandomMovementTarget();
 			}
 		}
-		public function lookForFood(dis:int):Boolean {
+		public function lookForFood():Boolean {
 			var foundFood:Boolean = false;
-			var ob:int = calc.ObstructedAddHere(x, y, master.plantArr, dis);
-			if (ob>0) {
-				tx = master.plantArr[ob].x;
-				ty = master.plantArr[ob].y;
+			var ob:PrimordialOrganism = Omni.FindClosestObject(x, y, foodPreference, sightDis);
+			if (ob != null) {
+				tx = ob.x;
+				ty = ob.y;
 			
 				//rotation = angle;
 				// face food
 				faceTar();
+				master.setTarget(tx, ty, 0xFF0000);
+				
 				//
 			
 				isBusy = true;
@@ -262,59 +272,42 @@
 				idleTime = Math.random() * lazyness * 15;
 			}
 			
-			if (hungerlevel < starveLevel) {
+			if (life < hungerLimit) {
 				mindState = "hungry";
 			}
 		}
 		private function setRandomMovementTarget():void {
 			var angle:int = 30 * Math.round(Math.random() * 12);
-			var p:Point = calc.placementAngle(angle, sightDis);
+			var p:Point = Omni.placementAngle(angle, sightDis);
 			
 			tx = x + p.x;
 			ty = y + p.y;
 			
 			faceTar();
+			master.setTarget(tx, ty, 0x00FFFF);
 			
 			isBusy = true;
 			physicalState = "moving";
 		}
 		
-		private function drawArc(centerX:Number, centerY:Number, startAngle:Number, endAngle:Number, radius:Number, direction:Number):void
-		/* 
-			centerX  -- the center X coordinate of the circle the arc is located on
-			centerY  -- the center Y coordinate of the circle the arc is located on
-			startAngle  -- the starting angle to draw the arc from
-			endAngle    -- the ending angle for the arc
-			radius    -- the radius of the circle the arc is located on
-			direction   -- toggle for going clockwise/counter-clockwise
-		*/
-		{
-			var g:Graphics = this.graphics;
-			var difference:Number = Math.abs(endAngle - startAngle);
-			/* How "far" around we actually have to draw */
-			
-			var divisions:Number = Math.floor(difference / (Math.PI / 4))+1;
-			/* The number of arcs we are going to use to simulate our simulated arc */
-			
-			var span:Number    = direction * difference / (2 * divisions);
-			var controlRadius:Number    = radius / Math.cos(span);
-			
-			g.moveTo(centerX + (Math.cos(startAngle)*radius), centerY + Math.sin(startAngle)*radius);
-			var controlPoint:Point;
-			var anchorPoint:Point;
-			for(var i:Number=0; i<divisions; ++i)
-			{
-				endAngle    = startAngle + span;
-				startAngle  = endAngle + span;
-				
-				controlPoint = new Point(centerX+Math.cos(endAngle)*controlRadius, centerY+Math.sin(endAngle)*controlRadius);
-				anchorPoint = new Point(centerX+Math.cos(startAngle)*radius, centerY+Math.sin(startAngle)*radius);
-				g.curveTo(
-					controlPoint.x,
-					controlPoint.y,
-					anchorPoint.x,
-					anchorPoint.y
-				);
+		// Overrides
+		public function eat():void {
+			var ob:int = Omni.FindFirstObject(x, y, master.plantArr, 20, this);
+			trace("eat", ob);
+			if (ob>0) {
+				master.physicalObjects[ob].life--;
+				life += 1;
+				size += 1;
+				reproductionLevel++;
+				//faceTar();
+			}else {
+				finishedTask();
+			}
+		}
+		public function reproduction():void {
+			if (reproductionLevel > reproductionLevelMax) {
+				reproductionLevel = 0;
+				master.addCreature(this.x + 30, this.y);
 			}
 		}
 		//

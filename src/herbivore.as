@@ -9,6 +9,8 @@ package {
 		
 		public function herbivore():void {
 			super(thing);
+			foodPreference = master.plantArr;
+			
 			//addChild(thing);
 			
 			thing.gotoAndStop("idle");
