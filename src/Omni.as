@@ -17,7 +17,7 @@ package {
 			}
 		}
 		
-		public static function FindClosestObject(xx:int, yy:int, objs:Array, dis:int, exclude:*=null):PrimordialOrganism {		
+		public static function FindClosestObject(xx:int, yy:int, objs:Array, dis:int, exclude:PrimordialOrganism=null):PrimordialOrganism {		
 			var k:PrimordialOrganism;
 			var a:int;
 			var b:int;
@@ -44,23 +44,12 @@ package {
 			return k;
 		}
 		
-		public static function FindFirstObject(xx:int, yy:int, objs:Array, dis:int, exclude:*=null):int {		
+		public static function FindFirstObject(xx:int, yy:int, objs:Array, dis:int, exclude:*=null):PrimordialOrganism {		
 			//dis = (dis * dis);
-			var k:int;
+			var k:PrimordialOrganism = null;
 			var a:int;
 			var b:int;
-			
-			if (xx <= 0) {
-				return 0;
-			}else if (xx >= 800) {
-				return 0;
-			}else if (yy <= 0) {
-				return 0;
-			}else if(yy >= 600){
-				return 0;
-			}
-			
-			
+						
 			for (var i:int; i < objs.length;i++ ) {
 				if (exclude) {
 					if (objs[i] == exclude) {
@@ -72,7 +61,7 @@ package {
 				b = (yy - objs[i].y) * (yy - objs[i].y);
 				
 				if (Math.sqrt(a + b) < dis) {
-					k = i;
+					k = objs[i]
 					break;
 				}
 				

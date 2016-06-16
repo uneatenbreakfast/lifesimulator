@@ -7,12 +7,25 @@ package {
 	import com.greensock.plugins.*;
 	import com.demonsters.debugger.MonsterDebugger;
 	import flash.text.TextField;
-	//---
 	
-	/**
-	 * ...
-	 * @author Nelson
-	 */
+	/*
+	 Bugs
+	 
+	 
+	 To Dos
+	 - Memory bank of last known location with food
+	 
+	 - some kind of pathfinding based on sight
+		- tasked packets - eg. search with sight sends out ray beam to surrounding area
+			segments of sight is processed in parts, not all at once (helps performance and is more realistic)
+	 
+			- some kind of genetic tasked process : ==> Genetic Algorithm
+		- Search: can be made up of [FindClosest, Move, FindClosest, Move, ]
+	 
+	 [ Can randomise: life, hungerLimit, speed, signtDis ]
+	 
+	*/
+	 
 	public class Main extends Sprite {
 		private static var _mainInstance:Main;
 		
@@ -46,7 +59,6 @@ package {
 			MonsterDebugger.trace(this, "Hello World!");
 			// entry point
 			
-			
 			// ----- Add Food/Monsters
 			var xx:int;
 			var yy:int;
@@ -63,9 +75,9 @@ package {
 				//addCreature(xx,yy);
 					//
 			//}
-			addCreature(400, 300);
+			//addCreature(400, 300);
 			
-			//addCarnivore(500, 300);
+			addCarnivore(500, 300);
 			// ----- Add Food/Monsters
 			
 			
@@ -74,8 +86,12 @@ package {
 			txt_spr = new TextField();
 			addChild(txt_spr);
 			
+			var fps:FpsCounter = new FpsCounter();
+			fps.x = stage.stageWidth - 50;
+			addChild(fps);
+			
 			// ----- Admin Buttons
-			var btns:Array = ["Selector", "Algae", "Carnivore", "Herbivore", "Omnivore"];
+			var btns:Array = ["Selector", "Algae", "Carnivore", "Herbivore", "Omnivore", "Lamb"];
 			for (var bn:* in btns) {
 				var bt:BasicButton = new BasicButton(btns[bn]);
 				bt.x = stage.stageWidth - ((bn + 1) * 110)
@@ -85,8 +101,6 @@ package {
 				} );
 				addChild(bt);
 			}
-			
-			
 			
 			// ----- Start Time
 			addEventListener(Event.ENTER_FRAME, universal_clock);
@@ -105,6 +119,10 @@ package {
 				drawSightDistance(animalsArr[cre]);
 			}
 			
+			for (var organism:* in physicalObjects) {
+					physicalObjects[organism].biologicalClock();
+			}
+			
 		}
 		private function clickofGod(e:MouseEvent):void {
 			if (stage.mouseY < stage.stageHeight - 20) {
@@ -118,10 +136,12 @@ package {
 					case "Herbivore":
 						addCreature(stage.mouseX, stage.mouseY);
 						break;
+					case "Lamb":
+						addLamb(stage.mouseX, stage.mouseY);
+						break;
 					case "Omnivore":
 						//addAlgae(stage.mouseX, stage.mouseY);
 						break;
-
 				}
 			}
 		}
@@ -158,6 +178,18 @@ package {
 			herbiArr.push(mc);
 		}
 		
+		public function addLamb(xx:int,yy:int):void {
+			var mc:herbivore = new herbivore();
+			mc.x = xx;
+			mc.y = yy;
+			mc.speed = 0;
+			addChild(mc);
+			
+			animalsArr.push(mc);
+			physicalObjects.push(mc);
+			herbiArr.push(mc);
+		}
+		
 		public function addCarnivore(xx:int,yy:int):void {
 			var mc:carnivore = new carnivore();
 			mc.x = xx;
@@ -175,6 +207,8 @@ package {
 		}
 		
 		public function setTarget(xx:int, yy:int, col:uint):void {
+			//return;
+			
 			var n:TargetCross = new TargetCross(col);
 			n.x = xx;
 			n.y = yy;

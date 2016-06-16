@@ -9,13 +9,7 @@
 	
 	
 	public class creature extends PrimordialOrganism {
-		/* To Dos
-		 - Memory bank of last known location with food
-		 - herbivores eating carnivores
-		 
-		 
-		 [ Can randomise: life, hungerLimit, speed, signtDis ]
-		*/
+	
 		
 		private var thing:*;
 		public var master:Main;
@@ -55,7 +49,6 @@
 			addChild(thing);
 			
 			thing.gotoAndStop("idle");
-			addEventListener(Event.ENTER_FRAME, biologicalClock);
 			
 			growth();
 		}
@@ -82,7 +75,6 @@
 			
 			
 			if (life < 0) {
-				removeEventListener(Event.ENTER_FRAME, biologicalClock);
 				master.remove(this);
 			}		
 		}
@@ -118,7 +110,7 @@
 			}
 			stuckLimit--;
 		}
-		public function biologicalClock(e:Event):void {
+		public function biologicalClock():void {
 			
 			
 			//----- Show Status Icons
@@ -218,11 +210,10 @@
 			}
 		}
 		public function finishedTask():void {
+			trace("[Finished Task]");
 			physicalState = "idle";
 			isBusy = false;
 			reRollMindState();
-			
-			trace("ff");
 		}
 		private function scanForFood():void {
 			if (!lookForFood()) {
@@ -231,7 +222,7 @@
 		}
 		public function lookForFood():Boolean {
 			var foundFood:Boolean = false;
-			var ob:PrimordialOrganism = Omni.FindClosestObject(x, y, foodPreference, sightDis);
+			var ob:PrimordialOrganism = Omni.FindClosestObject(x, y, foodPreference, sightDis, this);
 			if (ob != null) {
 				tx = ob.x;
 				ty = ob.y;
@@ -275,6 +266,8 @@
 			if (life < hungerLimit) {
 				mindState = "hungry";
 			}
+			
+			trace("[MindState: "+ mindState +"]");
 		}
 		private function setRandomMovementTarget():void {
 			var angle:int = 30 * Math.round(Math.random() * 12);
@@ -292,10 +285,10 @@
 		
 		// Overrides
 		public function eat():void {
-			var ob:int = Omni.FindFirstObject(x, y, master.plantArr, 20, this);
-			trace("eat", ob);
-			if (ob>0) {
-				master.physicalObjects[ob].life--;
+			var ob:PrimordialOrganism = Omni.FindClosestObject(x, y, foodPreference, 20, this);
+			if (ob != null) {
+				ob.life--;
+				
 				life += 1;
 				size += 1;
 				reproductionLevel++;
@@ -304,6 +297,7 @@
 				finishedTask();
 			}
 		}
+		
 		public function reproduction():void {
 			if (reproductionLevel > reproductionLevelMax) {
 				reproductionLevel = 0;

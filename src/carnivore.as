@@ -10,10 +10,8 @@ package {
 		public function carnivore():void {
 			super(thing);
 			foodPreference = master.animalsArr;
-			//addChild(thing);
 			
 			thing.gotoAndStop("idle");
-			//addEventListener(Event.ENTER_FRAME, biologicalClock);
 		}
 		
 
@@ -25,18 +23,7 @@ package {
 			}
 		}
 		
-		override public function eat():void {
-			var ob:int = Omni.FindFirstObject(x, y, master.animalsArr, 20, this);
-			if (ob>0) {
-				master.physicalObjects[ob].life--;
-				life += 1;
-				size += 1;
-				reproductionLevel++;
-				//faceTar();
-			}else {
-				finishedTask();
-			}
-		}
+		
 		
 	}
 

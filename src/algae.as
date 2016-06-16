@@ -16,10 +16,9 @@ package  {
 		public function Algae(m:Main):void {
 			master = m;
 			addChild(thing);
-			
-			addEventListener(Event.ENTER_FRAME, biologicalClock);
 		}
-		public function biologicalClock(e:Event):void {
+		
+		public function biologicalClock():void {
 			timeLeft--;
 			
 			checkReproduction();
