@@ -96,7 +96,7 @@ package {
 				a = (xx - objs[i].x) * (xx - objs[i].x);
 				b = (yy - objs[i].y) * (yy - objs[i].y);
 				
-				if (a + b < dis) {
+				if (a + b < (dis + objs[i].touchRadius)) {
 					k = false;
 					break;
 				}
@@ -136,6 +136,37 @@ package {
 				p.y = -ty;
 			}
 			return p;
+		}
+		
+		public static function pointIsInPoly(p:Point, polygon:Array) {
+			var isInside:Boolean = false;
+			
+			if (polygon.length == 0) {
+				return false;
+			}
+			var minX = polygon[0].x, maxX = polygon[0].x;
+			var minY = polygon[0].y, maxY = polygon[0].y;
+			for (var n = 1; n < polygon.length; n++) {
+				var q = polygon[n];
+				minX = Math.min(q.x, minX);
+				maxX = Math.max(q.x, maxX);
+				minY = Math.min(q.y, minY);
+				maxY = Math.max(q.y, maxY);
+			}
+
+			if (p.x < minX || p.x > maxX || p.y < minY || p.y > maxY) {
+				return false;
+			}
+
+			var i:int = 0, j = polygon.length - 1;
+			for (i, j; i < polygon.length; j = i++) {
+				if ( (polygon[i].y > p.y) != (polygon[j].y > p.y) &&
+						p.x < (polygon[j].x - polygon[i].x) * (p.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x ) {
+					isInside = !isInside;
+				}
+			}
+
+			return isInside;
 		}
 		
 		public static function drawArc(displayOb:Sprite, centerX:Number, centerY:Number, startAngle:Number, endAngle:Number, radius:Number, direction:Number):void

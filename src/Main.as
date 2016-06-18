@@ -6,6 +6,7 @@ package {
 	import com.greensock.easing.*;
 	import com.greensock.plugins.*;
 	import com.demonsters.debugger.MonsterDebugger;
+	import flash.geom.Point;
 	import flash.text.TextField;
 	
 	/*
@@ -77,7 +78,7 @@ package {
 			//}
 			//addCreature(400, 300);
 			
-			addCarnivore(500, 300);
+			//addCarnivore(500, 300);
 			// ----- Add Food/Monsters
 			
 			
@@ -108,7 +109,7 @@ package {
 			// ----- Start Time
 		}
 		private function universal_clock(e:Event):void {
-			this.graphics.clear();
+			//this.graphics.clear();
 			
 			var txt:String 	 = "Herbivores: " + herbiArr.length +"\n";
 			txt 			+= "Carnivores: " + carniArr.length +"\n";
@@ -124,7 +125,17 @@ package {
 			}
 			
 		}
+		
+		
+		private var polys:Array = [];
+
 		private function clickofGod(e:MouseEvent):void {
+			
+			var p:Point = new Point(stage.mouseX, stage.mouseY);
+			
+			
+			
+			
 			if (stage.mouseY < stage.stageHeight - 20) {
 				switch(GodAction) {
 					case "Algae":
@@ -140,9 +151,26 @@ package {
 						addLamb(stage.mouseX, stage.mouseY);
 						break;
 					case "Omnivore":
+						if (!Omni.pointIsInPoly(p, polys)) {
+							polys.push(p);
+							trace("add");
+						}
 						//addAlgae(stage.mouseX, stage.mouseY);
 						break;
 				}
+			}
+			
+			trace(Omni.pointIsInPoly(p, polys), stage.mouseX, stage.mouseY);
+			this.graphics.clear();
+			this.graphics.lineStyle(1, 0);
+			
+			if (polys.length > 0) {
+				this.graphics.moveTo(polys[0].x, polys[0].y);
+			}
+			for (var gl in polys) {
+				var pp:Point = polys[gl];
+				this.graphics.lineTo(pp.x, pp.y);
+				
 			}
 		}
 		

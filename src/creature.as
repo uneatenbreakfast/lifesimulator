@@ -23,7 +23,6 @@
 		
 		// stats
 		public var size:int = 1;
-		public var touchRadius:int = 10; // Radius of hitArea
 		public var speed:int = 1;
 		public var sightDis:int = 200;
 		public var lazyness:int = 5;

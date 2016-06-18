@@ -7,7 +7,7 @@ package  {
 		private var master:Main;
 		private var thing:crop = new crop();
 		
-		private var timeToReproduce:int = 1000 * Math.random() + 300;
+		private var timeToReproduce:int = 1000 * Math.random() + 1100;
 		private var timeLeft:int = 10;
 		
 		// stats
