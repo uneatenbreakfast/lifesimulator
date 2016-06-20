@@ -8,18 +8,21 @@
 	import flash.geom.Point;
 	
 	
-	public class creature extends PrimordialOrganism {
+	public class Creature extends PrimordialOrganism {
 	
 		
 		private var thing:*;
 		public var master:Main;
 		
-		public var mindState:String = "adventurous";// adventurous, moving, idle, hungry
+		public var mindState:int = MindState.ADVENTUROUS;
 		public var physicalState:String = "idle"; // moving,
 		public var isBusy:Boolean = false; // not doing anything, can make decisions
 		
 		//Herbi/Carni
 		public var foodPreference:Array = [];
+		
+		//
+		private var wantTarget:Point = new Point(); // wants to go here
 		
 		// stats
 		public var size:int = 1;
@@ -42,7 +45,7 @@
 		public var i_hunger:icon_hungry = new icon_hungry();
 		
 		
-		public function creature(th:*):void {
+		public function Creature(th:*):void {
 			thing = th;
 			master = Main.GetInstance();
 			addChild(thing);
@@ -104,6 +107,7 @@
 		}
 		private function checkStuckStatus():void {
 			if (stuckLimit < 0) {
+				trace("[Unstuck self]");
 				stuckLimit = 50;
 				finishedTask();// character can't reach target location, so do something else
 			}
@@ -147,10 +151,10 @@
 			
 			if (!isBusy) {
 				switch(mindState) {
-					case "adventurous":
+					case MindState.ADVENTUROUS:
 						setRandomMovementTarget();
 						break;
-					case "idle":
+					case MindState.IDLE:
 						thing.gotoAndStop("idle");
 						idleTime--;
 						
@@ -159,8 +163,11 @@
 							reRollMindState();
 						}
 						break;
-					case "hungry":
+					case MindState.HUNGRY:
 						scanForFood();
+						break;
+					case MindState.ASLEEP:
+						//scanForFood();
 						break;
 				}
 			}else {
@@ -169,10 +176,10 @@
 					case "moving":
 						thing.gotoAndStop("move");
 						
-						if (mindState == "hungry") {
+						if (mindState == MindState.HUNGRY) {
 							lookForFood();
 						}
-											
+						
 						var dx:Number = tx - x;
 						var dy:Number = ty - y;
 						var distance:Number = Math.sqrt(dx * dx + dy * dy);
@@ -187,6 +194,7 @@
 							dx = dy = 0;
 							checkStuckStatus();
 						}
+						
 
 						if (distance < touchRadius + 5) {
 							if (lookForFood()) {// found food
@@ -205,6 +213,9 @@
 						// check if touching food/enemy
 						eat();
 						break;
+					case "asleep":
+						//
+						break;
 				}
 			}
 		}
@@ -219,20 +230,25 @@
 				setRandomMovementTarget();
 			}
 		}
+		public function putAsleep():void {
+			physicalState = "asleep";
+			isBusy = true;
+		}
 		public function lookForFood():Boolean {
 			var foundFood:Boolean = false;
 			var ob:PrimordialOrganism = Omni.FindClosestObject(x, y, foodPreference, sightDis, this);
 			if (ob != null) {
-				tx = ob.x;
-				ty = ob.y;
+				wantTarget.x = ob.x;
+				wantTarget.y = ob.y;
 			
 				//rotation = angle;
 				// face food
 				faceTar();
-				master.setTarget(tx, ty, 0xFF0000);
+				master.setTarget(wantTarget.x, wantTarget.y, 0xFF0000);
 				
 				//
-			
+				Pathfinder.scanStep(wantTarget, this); // scans direction and see if it can go there
+				//
 				isBusy = true;
 				physicalState = "moving";
 				foundFood = true;				
@@ -256,14 +272,14 @@
 		}
 		private function reRollMindState():void {
 			var states:Array = ["adventurous","idle", "hungry"];
-			mindState = states[Math.floor(Math.random() * states.length)];
+			mindState = MindState.GetNewMindState();
 			
-			if (mindState == "idle") {
+			if (mindState == MindState.IDLE) {
 				idleTime = Math.random() * lazyness * 15;
 			}
 			
 			if (life < hungerLimit) {
-				mindState = "hungry";
+				mindState = MindState.HUNGRY;
 			}
 			
 			trace("[MindState: "+ mindState +"]");
@@ -272,14 +288,23 @@
 			var angle:int = 30 * Math.round(Math.random() * 12);
 			var p:Point = Omni.placementAngle(angle, sightDis);
 			
-			tx = x + p.x;
-			ty = y + p.y;
+			setTargetCoordinates(x + p.x, y + p.y);
 			
 			faceTar();
-			master.setTarget(tx, ty, 0x00FFFF);
 			
 			isBusy = true;
 			physicalState = "moving";
+		}
+		
+		//
+		
+		
+		public function setTargetCoordinates(_tx:Number, _ty:Number):void {
+			tx = _tx;
+			ty = _ty;
+			
+			master.setTarget(tx, ty, 0x00FFFF);
+
 		}
 		
 		// Overrides

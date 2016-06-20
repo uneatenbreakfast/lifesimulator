@@ -4,10 +4,10 @@ package {
 	import flash.events.Event;
 	import flash.geom.Point;
 	
-	public class herbivore extends creature {
+	public class Herbivore extends Creature {
 		private var thing:blob = new blob();
 		
-		public function herbivore():void {
+		public function Herbivore():void {
 			super(thing);
 			foodPreference = master.plantArr;
 			

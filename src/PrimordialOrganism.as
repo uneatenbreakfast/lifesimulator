@@ -1,6 +1,7 @@
 package  
 {
 	import flash.display.MovieClip;
+	import flash.geom.Point;
 	/**
 	 * ...
 	 * @author ...
@@ -14,6 +15,12 @@ package
 		public function PrimordialOrganism() 
 		{
 			
+		}
+		
+		public function getHorPoint():Array {
+			var L:Point = new Point(x - touchRadius, y);
+			var R:Point = new Point(x + touchRadius, y);
+			return [L, R];
 		}
 		
 	}

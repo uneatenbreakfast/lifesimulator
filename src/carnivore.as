@@ -4,10 +4,10 @@ package {
 	import flash.events.Event;
 	import flash.geom.Point;
 	
-	public class carnivore extends creature {
+	public class Carnivore extends Creature {
 		private var thing:carni = new carni();
 		
-		public function carnivore():void {
+		public function Carnivore():void {
 			super(thing);
 			foodPreference = master.animalsArr;
 			

@@ -30,8 +30,8 @@ package {
 	public class Main extends Sprite {
 		private static var _mainInstance:Main;
 		
-		public var physicalObjects:Array = []; // all objects
-		public var plantArr:Array = [];		// plants
+		public var physicalObjects:Array = []; // all objects[ Algae, Herbi, Carni ] 
+		public var plantArr:Array = [];		// Algae
 		public var animalsArr:Array = []; // Herbivores & Carnivores
 		public var herbiArr:Array = []; // Herbivores
 		public var carniArr:Array = []; // Carnivores
@@ -92,7 +92,7 @@ package {
 			addChild(fps);
 			
 			// ----- Admin Buttons
-			var btns:Array = ["Selector", "Algae", "Carnivore", "Herbivore", "Omnivore", "Lamb"];
+			var btns:Array = ["Selector", "Algae", "Carnivore", "Herbivore", "Omnivore", "Lamb", "Cripple"];
 			for (var bn:* in btns) {
 				var bt:BasicButton = new BasicButton(btns[bn]);
 				bt.x = stage.stageWidth - ((bn + 1) * 110)
@@ -109,7 +109,7 @@ package {
 			// ----- Start Time
 		}
 		private function universal_clock(e:Event):void {
-			//this.graphics.clear();
+			this.graphics.clear();
 			
 			var txt:String 	 = "Herbivores: " + herbiArr.length +"\n";
 			txt 			+= "Carnivores: " + carniArr.length +"\n";
@@ -130,10 +130,7 @@ package {
 		private var polys:Array = [];
 
 		private function clickofGod(e:MouseEvent):void {
-			
-			var p:Point = new Point(stage.mouseX, stage.mouseY);
-			
-			
+
 			
 			
 			if (stage.mouseY < stage.stageHeight - 20) {
@@ -148,30 +145,19 @@ package {
 						addCreature(stage.mouseX, stage.mouseY);
 						break;
 					case "Lamb":
-						addLamb(stage.mouseX, stage.mouseY);
+						addLamb(stage.mouseX, stage.mouseY).putAsleep();
+						break;
+					case "Cripple":
+						var c:Carnivore = addCarnivore(stage.mouseX, stage.mouseY);
+						c.speed = 0;
+						c.lookForFood();
 						break;
 					case "Omnivore":
-						if (!Omni.pointIsInPoly(p, polys)) {
-							polys.push(p);
-							trace("add");
-						}
-						//addAlgae(stage.mouseX, stage.mouseY);
+		
 						break;
 				}
 			}
-			
-			trace(Omni.pointIsInPoly(p, polys), stage.mouseX, stage.mouseY);
-			this.graphics.clear();
-			this.graphics.lineStyle(1, 0);
-			
-			if (polys.length > 0) {
-				this.graphics.moveTo(polys[0].x, polys[0].y);
-			}
-			for (var gl in polys) {
-				var pp:Point = polys[gl];
-				this.graphics.lineTo(pp.x, pp.y);
-				
-			}
+
 		}
 		
 		public function remove(food:*):void {
@@ -182,10 +168,11 @@ package {
 			Omni.removeItem(herbiArr, food);
 			removeChild(food);
 		}
-		public function addAlgae(xx:int, yy:int):void {
-			var ok:Boolean = Omni.spaceIsFree(xx,yy, physicalObjects, 19);
+		public function addAlgae(xx:int, yy:int):Algae {
+			var ok:Boolean = Omni.spaceIsFree(xx, yy, physicalObjects, 19);
+			var mc:Algae;
 			if (ok) {
-				var mc:Algae = new Algae(this);
+				mc = new Algae(this);
 				mc.x = xx;
 				mc.y = yy;
 				addChild(mc);
@@ -193,10 +180,11 @@ package {
 				plantArr.push(mc);
 				physicalObjects.push(mc);
 			}
+			return mc;
 		}
 		
-		public function addCreature(xx:int,yy:int):void {
-			var mc:herbivore = new herbivore();
+		public function addCreature(xx:int,yy:int):Herbivore {
+			var mc:Herbivore = new Herbivore();
 			mc.x = xx;
 			mc.y = yy;
 			addChild(mc);
@@ -204,10 +192,11 @@ package {
 			animalsArr.push(mc);
 			physicalObjects.push(mc);
 			herbiArr.push(mc);
+			return mc;
 		}
 		
-		public function addLamb(xx:int,yy:int):void {
-			var mc:herbivore = new herbivore();
+		public function addLamb(xx:int,yy:int):Herbivore {
+			var mc:Herbivore = new Herbivore();
 			mc.x = xx;
 			mc.y = yy;
 			mc.speed = 0;
@@ -216,10 +205,11 @@ package {
 			animalsArr.push(mc);
 			physicalObjects.push(mc);
 			herbiArr.push(mc);
+			return mc;
 		}
 		
-		public function addCarnivore(xx:int,yy:int):void {
-			var mc:carnivore = new carnivore();
+		public function addCarnivore(xx:int,yy:int):Carnivore {
+			var mc:Carnivore = new Carnivore();
 			mc.x = xx;
 			mc.y = yy;
 			addChild(mc);
@@ -227,9 +217,11 @@ package {
 			animalsArr.push(mc);
 			physicalObjects.push(mc);		
 			carniArr.push(mc);
+			
+			return mc;
 		}
 		
-		private function drawSightDistance(obj:creature):void {
+		private function drawSightDistance(obj:Creature):void {
 			this.graphics.lineStyle(1, 0);
 			this.graphics.drawCircle(obj.x, obj.y, obj.sightDis);
 		}
